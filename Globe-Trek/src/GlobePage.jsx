@@ -6,11 +6,26 @@ import { Routes, Route } from "react-router-dom";
 
 function GlobePage() {
 
-    const [query, setQuery] = useState("")
+    const [query, setQuery] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [result, setResult] = useState(null);
 
-function handleSearch() {
-    console.log("Search for:", query);
 
+    function handleSearch() {
+    setLoading(true);
+    setResult(null);
+
+    // Simulate API delay
+    setTimeout(() => {
+      setResult({
+        city: query,
+        info: `Sample info about ${query}.`,
+        temp: "-",
+        country:"-",
+      });
+
+      setLoading(false);
+    }, 1000);
 }
 
      return (
@@ -27,9 +42,13 @@ function handleSearch() {
           fullWidth
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearch();
+          }}
         />
-        <Button variant="contained" onClick={handleSearch}>
-          Go
+        <Button variant="contained" onClick={handleSearch}
+                disabled={!query.trim() || loading}>
+          {loading ? "Searching..." : "Go"}
         </Button>
       </Stack>
 
@@ -52,15 +71,47 @@ function handleSearch() {
             fontSize: 18,
           }}
         >
-          🌍 Globe
+
+          {result ? (
+            <>
+            <div>🌍</div>
+            <div>{result.city}</div>
+            </>
+          ) : (
+            <>
+              <div>🌍Globe</div>
+              <div style={{ fontSize: 14 }}>Waiting for Search</div>
+            </>
+          )}
         </Box>
 
+        
         {/* Info Panel */}
-        <Paper sx={{ p: 3, minWidth: 280 }}>
-          <Typography variant="body1">
-            Search for a city to display information here.
-          </Typography>
-        </Paper>
+        <Paper sx={{ p: 3, minWidth: 260 }}>
+                  {loading ? (
+              <Typography>Loading...</Typography>
+            ) : result ? (
+              <>
+                <Typography variant="h6" gutterBottom>
+                  {result.city}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Country:</strong> {result.country}
+                </Typography>
+                <Typography variant="body2">
+                  <strong>Temperature:</strong> {result.temp}
+                </Typography>
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  {result.info}
+                </Typography>
+              </>
+            ) : (
+              <Typography variant="body1">
+                Search for a city to display details here.
+              </Typography>
+            )}
+          </Paper>
+
       </Stack>
     </Box>
     
