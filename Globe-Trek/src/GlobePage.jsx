@@ -1,8 +1,38 @@
 import React, { useState } from "react";
 import { Box, Stack, TextField, Button, Paper, Typography } from "@mui/material";
-import { Routes, Route } from "react-router-dom";
 
 
+
+
+ async function getCoordinates(city) {
+      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${city}`
+
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (!data.results || data.results.length === 0) {
+        return null; // city not found
+      }
+
+      const place = data.results[0];
+
+      return {
+        name: place.name,
+        country: place.country,
+        lat: place.latitude,
+        lon: place.longitude
+      };
+    }
+
+    // Helper: get weather for given lat/lon
+      async function getWeather(lat, lon) {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`;
+
+        const res = await fetch(url);
+        const data = await res.json();
+
+        return data.current_weather;
+      }
 
 function GlobePage() {
 
@@ -10,22 +40,39 @@ function GlobePage() {
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
 
-
-    function handleSearch() {
+// NOTE: We use asyn because we use await inside
+async function handleSearch() {
     setLoading(true);
     setResult(null);
 
-    // Simulate API delay
-    setTimeout(() => {
+    try {
+      // 1) Get coordinates from city name
+      const location = await getCoordinates(query);
+
+      if (!location) {
+        setResult({ error: "City not found" });
+        setLoading(false);
+
+        return;
+      }
+      
+      // 2) Get live weather using coordinates
+      const weather = await getWeather(location.lat, location.lon);
+
+      // 3) Update state for UI
       setResult({
-        city: query,
-        info: `Sample info about ${query}.`,
-        temp: "-",
-        country:"-",
+        city: location.name, 
+        country: location.country,
+        temp: weather.temperature,
+        info:`Windspeed: ${weather.windspeed} km/h`,
       });
 
+    } catch (err) {
+      console.error(err)
+      setResult({ error: "Something went wrong fetching the data" });
+    }
+
       setLoading(false);
-    }, 1000);
 }
 
      return (
