@@ -26,12 +26,30 @@ import { Box, Stack, TextField, Button, Paper, Typography } from "@mui/material"
 
     // Helper: get weather for given lat/lon
       async function getWeather(lat, lon) {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`;
+        const url = `https://api.open-meteo.com/v1/forecast`+
+                    `?latitude=${lat}`+
+                    `&longitude=${lon}`+
+                    `&current_weather=true`+
+                    `&temperature_unit=fahrenheit`+
+                    `&windspeed_unit=mph`;
+
+          console.log("Weather URL:", url);
 
         const res = await fetch(url);
         const data = await res.json();
 
+        console.log("Weather res:", data);
+
         return data.current_weather;
+      }
+
+      function getCityExtras(city, country) {
+          return {
+            airport:`Nearest Airport, ${country} (demo data).`,
+            event: `Sample upcoming event in ${city} – concerts, festivals, etc. (demo).`,
+            funFact: `${city} is known for its unique culture and landmarks.`,
+          }
+            
       }
 
 function GlobePage() {
@@ -42,6 +60,10 @@ function GlobePage() {
 
 // NOTE: We use asyn because we use await inside
 async function handleSearch() {
+
+  const trimmed = query.trim();
+  if (!trimmed) return;
+
     setLoading(true);
     setResult(null);
 
@@ -55,16 +77,26 @@ async function handleSearch() {
 
         return;
       }
-      
+
+    
       // 2) Get live weather using coordinates
       const weather = await getWeather(location.lat, location.lon);
+     
+      const extras = getCityExtras(location.name, location.country)
 
+      const tempF = Math.round(weather.temperature); 
+      const windMph = weather.windspeed;
+      const windKmh = Math.round(windMph * 1.60934);
+
+      
       // 3) Update state for UI
       setResult({
         city: location.name, 
         country: location.country,
-        temp: weather.temperature,
-        info:`Windspeed: ${weather.windspeed} km/h`,
+        tempF,
+        windMph,
+        windKmh,
+        extras,     
       });
 
     } catch (err) {
@@ -111,11 +143,13 @@ async function handleSearch() {
             background: "radial-gradient(circle at 30% 30%, #4fc3f7, #01579b)",
             boxShadow: "0 0 25px rgba(0,0,0,0.35)",
             display: "flex",
+            flexDirection:"column",
             alignItems: "center",
             justifyContent: "center",
             color: "white",
             fontWeight: "bold",
             fontSize: 18,
+            gap:"1",
           }}
         >
 
@@ -137,21 +171,41 @@ async function handleSearch() {
         <Paper sx={{ p: 3, minWidth: 260 }}>
                   {loading ? (
               <Typography>Loading...</Typography>
-            ) : result ? (
-              <>
+            ) : result?.error ? (
+              <Typography color="error">{result.error}</Typography> 
+              ) :result ? (
+            <>
+  
                 <Typography variant="h6" gutterBottom>
-                  {result.city}
+                  {result.city} {result.country}
                 </Typography>
+
+                {/* Temp Line */}
+                <Typography variant="h4" gutterBottom>
+                  {result.tempF}°F
+                </Typography>
+
+                {/* Wind in mph + km.h */}
                 <Typography variant="body2">
-                  <strong>Country:</strong> {result.country}
+                   Wind: {result.windMph} mph ({result.windKmh} km/h)
                 </Typography>
-                <Typography variant="body2">
-                  <strong>Temperature:</strong> {result.temp}
-                </Typography>
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  {result.info}
-                </Typography>
-              </>
+
+                {/* Extra 'flights / events / misc info' */}
+                {result.extras &&  (
+                  <>
+                    <Typography variant="body2" sx={{ mt: 2 }}>
+                    {result.extras.airport}
+                    </Typography> 
+                     <Typography variant="body2" sx={{ mt: 1 }}>
+                    {result.extras.event}
+                    </Typography> 
+                     <Typography variant="body2" sx={{ mt: 1 }}>
+                    {result.extras.funFact}
+                    </Typography> 
+                  </>
+                
+                )}
+            </>
             ) : (
               <Typography variant="body1">
                 Search for a city to display details here.
