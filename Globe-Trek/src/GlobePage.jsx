@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Box, Stack, TextField, Button, Paper, Typography } from "@mui/material";
-
+import { findNearestAirport } from "./utils/geo";
 
 
 
@@ -81,6 +81,8 @@ async function handleSearch() {
     
       // 2) Get live weather using coordinates
       const weather = await getWeather(location.lat, location.lon);
+
+      const nearestAirport = findNearestAirport(location.lat, location.lon)
      
       const extras = getCityExtras(location.name, location.country)
 
@@ -91,12 +93,15 @@ async function handleSearch() {
       
       // 3) Update state for UI
       setResult({
+
         city: location.name, 
+        airport: nearestAirport,
         country: location.country,
         tempF,
         windMph,
         windKmh,
         extras,     
+
       });
 
     } catch (err) {
@@ -193,9 +198,14 @@ async function handleSearch() {
                 {/* Extra 'flights / events / misc info' */}
                 {result.extras &&  (
                   <>
-                    <Typography variant="body2" sx={{ mt: 2 }}>
-                    {result.extras.airport}
-                    </Typography> 
+                    {result.airport && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      <strong>Nearest airport:</strong>{" "}
+                      {result.airport.name} ({result.airport.code}) – {result.airport.city} (
+                      {result.airport.distanceKm.toFixed(0)} km away)
+                    </Typography>
+                  )};
+
                      <Typography variant="body2" sx={{ mt: 1 }}>
                     {result.extras.event}
                     </Typography> 
