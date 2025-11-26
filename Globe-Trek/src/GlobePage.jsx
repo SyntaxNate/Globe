@@ -204,7 +204,7 @@ async function handleSearch() {
                       {result.airport.name} ({result.airport.code}) – {result.airport.city} (
                       {result.airport.distanceKm.toFixed(0)} km away)
                     </Typography>
-                  )};
+                  )}
 
                      <Typography variant="body2" sx={{ mt: 1 }}>
                     {result.extras.event}
