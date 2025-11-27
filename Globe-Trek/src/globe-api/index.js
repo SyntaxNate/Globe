@@ -4,10 +4,12 @@ import dotenv from "dotenv";
 import fetch from "node-fetch";
 
 dotenv.config();
+console.log("AVIATIONSTACK_KEY from .env:", process.env.AVIATIONSTACK_KEY);
+
 
 const app = express();
 
-// Allow yout Vite dev server to talk to this backend
+// Allow your Vite dev server to talk to this backend
 app.use(
     cors({
         origin:"http://localhost:5173",
@@ -21,7 +23,7 @@ app.get("/", (req, res) => {
     res.json({ status: "Globe API backend is running"});
 });
 
-
+//Get /api/flights?depIata=JFK
 app.get("/api/flights", async (req, res) => {
     const depIata = req.query.depIata;
 

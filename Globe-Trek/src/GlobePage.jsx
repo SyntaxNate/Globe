@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Box, Stack, TextField, Button, Paper, Typography } from "@mui/material";
 import { findNearestAirport } from "./utils/geo";
+import { fetchFlightsForAirport } from "./globe-api/backend";
 
 
 
@@ -90,6 +91,16 @@ async function handleSearch() {
       const windMph = weather.windspeed;
       const windKmh = Math.round(windMph * 1.60934);
 
+      // fetch flights from backend
+      let flights = [];
+      if (nearestAirport?.code) {
+        try {
+          flights = await fetchFlightsForAirport(nearestAirport.code);
+        } catch (err) {
+          console.log("Error fetching flights:", err);
+        }
+      }
+
       
       // 3) Update state for UI
       setResult({
@@ -101,6 +112,7 @@ async function handleSearch() {
         windMph,
         windKmh,
         extras,     
+        flights, // store flights in state
 
       });
 
@@ -201,8 +213,8 @@ async function handleSearch() {
                     {result.airport && (
                     <Typography variant="body2" sx={{ mt: 1 }}>
                       <strong>Nearest airport:</strong>{" "}
-                      {result.airport.name} ({result.airport.code}) – {result.airport.city} (
-                      {result.airport.distanceKm.toFixed(0)} km away)
+                      {result.airport.name} ({result.airport.code}) – 
+                      {result.airport.city} ({result.airport.distanceKm.toFixed(0)} km away)
                     </Typography>
                   )}
 
