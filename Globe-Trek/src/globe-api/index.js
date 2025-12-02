@@ -69,6 +69,38 @@ app.get("/api/flights", async (req, res) => {
     }
 });
 
+// GET api/rates?base=USD
+
+app.get("/api/rates", async (req, res) => {
+    const base = (req.query.base || "USD").toUpperCase();
+
+    try {
+        const url = `https://open.er-api.com/v6/latest/${base}`;
+        const apiRes = await fetch(url);
+
+        if(!apiRes.ok) {
+            return res.status(502).json({ error:"Currency API request failed" })
+        }
+
+        const data = await apiRes.json();
+        console.log("Currency API raw:", data);
+
+        const rates = data.conversion_rates;
+
+        if (!rates) {
+            return res.status(500).json({ error: "Unexpected currency API response" });
+        }
+
+        res.json({ base: data.base_code || base, rates, 
+        });
+
+    }catch (err) {
+        console.error("Currency API error:", err);
+        res.status(500).json({ error: "Server error fetching currency rates" });
+    }
+});
+
+
 //Routes here...
 
 const PORT = process.env.PORT || 5000;
