@@ -80,7 +80,7 @@ async function handleSearch() {
       }
 
     
-      // 2) Get live weather using coordinates
+      // 2) Get live weather, flights, etc using coordinates
       const weather = await getWeather(location.lat, location.lon);
 
       const nearestAirport = findNearestAirport(location.lat, location.lon)

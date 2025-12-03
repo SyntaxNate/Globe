@@ -3,6 +3,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import fetch from "node-fetch";
 
+
 dotenv.config();
 console.log("AVIATIONSTACK_KEY from .env:", process.env.AVIATIONSTACK_KEY);
 
@@ -12,9 +13,8 @@ const app = express();
 // Allow your Vite dev server to talk to this backend
 app.use(
     cors({
-        origin:"http://localhost:5173",
-    })
-);
+        origin:"http://localhost:5173", // Allow only your frontend domain
+    }));
 
 app.use(express.json());
 
@@ -85,7 +85,7 @@ app.get("/api/rates", async (req, res) => {
         const data = await apiRes.json();
         console.log("Currency API raw:", data);
 
-        const rates = data.conversion_rates;
+        const rates = data.rates;
 
         if (!rates) {
             return res.status(500).json({ error: "Unexpected currency API response" });
