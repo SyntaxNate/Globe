@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Box, Stack, TextField, Button, Paper, Typography } from "@mui/material";
 import { findNearestAirport } from "./utils/geo";
 import { fetchFlightsForAirport } from "./globe-api/backend";
+import { getCurrencyCodeForCountry, getCurrencyOptions } from "./utils/currency";
+import { Select, MenuItem } from "@mui/material";
 
 
 
@@ -58,6 +60,10 @@ function GlobePage() {
     const [query, setQuery] = useState("");
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
+    const [baseCurrency, setBaseCurrency] = useState("USD");
+
+    const currencyOptions = getCurrencyOptions();
+
 
 // NOTE: We use asyn because we use await inside
 async function handleSearch() {
@@ -80,13 +86,42 @@ async function handleSearch() {
       }
 
     
-      // 2) Get live weather, flights, etc using coordinates
+      // 2) Get live weather using coordinates
       const weather = await getWeather(location.lat, location.lon);
 
+      // 3) Find nearest airport
       const nearestAirport = findNearestAirport(location.lat, location.lon)
      
+      // 4) Get extra city info (demo text)
       const extras = getCityExtras(location.name, location.country)
 
+      // 5) Figure out local currency based on country
+      const localCurrencyCode = getCurrencyCodeForCountry(location.country) || "USD";
+      
+      
+      // 6) Ask backend for currency rate (user base → local)
+      let currencyInfo = null;
+      try {
+        const currencyRes = await fetch(
+       `http://localhost:5000/api/currency?base=${baseCurrency}&target=${localCurrencyCode}`)
+      
+       if (currencyRes.ok) {
+        const currencyData = await currencyRes.json();
+        if (currencyData.rate) {
+          currencyInfo = {
+            base: currencyData.base,
+            target: currencyData.target,
+            rate: currencyData.rate,
+          };
+        }
+       }
+      } catch (err) {
+        console.log("Currency fetch error:", err);
+        // currencyInfo stays null if it fails
+      }
+      
+
+      // 7) Derived values from weather 
       const tempF = Math.round(weather.temperature); 
       const windMph = weather.windspeed;
       const windKmh = Math.round(windMph * 1.60934);
@@ -104,7 +139,6 @@ async function handleSearch() {
       
       // 3) Update state for UI
       setResult({
-
         city: location.name, 
         airport: nearestAirport,
         country: location.country,
@@ -113,7 +147,7 @@ async function handleSearch() {
         windKmh,
         extras,     
         flights, // store flights in state
-
+        currency: currencyInfo,
       });
 
     } catch (err) {
@@ -147,6 +181,11 @@ async function handleSearch() {
           {loading ? "Searching..." : "Go"}
         </Button>
       </Stack>
+
+      <Stack direction="row" spacing={2} sx={{ mb: 2 }}>
+       
+      </Stack>
+
 
       {/* Layout: Globe left, info right */}
       <Stack direction="row" spacing={4}>
@@ -224,9 +263,22 @@ async function handleSearch() {
                      <Typography variant="body2" sx={{ mt: 1 }}>
                     {result.extras.funFact}
                     </Typography> 
-                  </>
-                
+                  </> 
                 )}
+              <Stack>
+                  <Typography variant="body2">Your currency:</Typography>
+                  <Select
+                    size="small"
+                    value={baseCurrency}
+                    onChange={(e) => setBaseCurrency(e.target.value)}
+                  >
+                    {currencyOptions.map((c) => (
+                      <MenuItem key={c.code} value={c.code}>
+                        {c.label} ({c.code})
+                      </MenuItem>
+                    ))}
+                  </Select>
+              </Stack>
             </>
             ) : (
               <Typography variant="body1">
@@ -234,7 +286,6 @@ async function handleSearch() {
               </Typography>
             )}
           </Paper>
-
       </Stack>
     </Box>
     
